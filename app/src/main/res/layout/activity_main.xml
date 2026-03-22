@@ -4,16 +4,13 @@
     android:layout_height="match_parent"
     android:background="#050505">
 
-    <!-- Main content wrapper - becomes horizontal on landscape via code -->
     <LinearLayout
-        android:id="@+id/main_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:gravity="center_horizontal"
         android:padding="24dp">
 
-        <!-- Charging badge -->
         <LinearLayout
             android:id="@+id/charging_badge"
             android:layout_width="wrap_content"
@@ -23,56 +20,42 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             android:visibility="gone">
-
-            <ImageView
+            <View
                 android:layout_width="8dp"
                 android:layout_height="14dp"
-                android:src="@drawable/ic_bolt"
-                android:layout_marginEnd="4dp"/>
-
+                android:background="@drawable/ic_bolt"/>
             <TextView
-                android:id="@+id/tv_charging"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="CARGANDO"
                 android:textColor="#555555"
                 android:textSize="8sp"
                 android:letterSpacing="0.2"
-                android:fontFamily="sans-serif-light"/>
+                android:layout_marginStart="4dp"/>
         </LinearLayout>
 
-        <!-- Clock area -->
-        <LinearLayout
+        <TextView
+            android:id="@+id/tv_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal">
+            android:text="12:00"
+            android:textColor="#F0F0F0"
+            android:textSize="72sp"
+            android:fontFamily="sans-serif-thin"
+            android:letterSpacing="-0.05"
+            android:includeFontPadding="false"/>
 
-            <TextView
-                android:id="@+id/tv_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="12:00"
-                android:textColor="#F0F0F0"
-                android:textSize="72sp"
-                android:fontFamily="sans-serif-thin"
-                android:letterSpacing="-0.05"
-                android:includeFontPadding="false"/>
+        <TextView
+            android:id="@+id/tv_ampm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AM"
+            android:textColor="#555555"
+            android:textSize="11sp"
+            android:letterSpacing="0.2"
+            android:fontFamily="sans-serif-light"
+            android:layout_marginTop="2dp"/>
 
-            <TextView
-                android:id="@+id/tv_ampm"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="AM"
-                android:textColor="#555555"
-                android:textSize="11sp"
-                android:letterSpacing="0.2"
-                android:fontFamily="sans-serif-light"
-                android:layout_marginTop="2dp"/>
-
-        </LinearLayout>
-
-        <!-- Date -->
         <TextView
             android:id="@+id/tv_date"
             android:layout_width="wrap_content"
@@ -84,7 +67,6 @@
             android:fontFamily="sans-serif-light"
             android:layout_marginTop="4dp"/>
 
-        <!-- Divider -->
         <View
             android:layout_width="36dp"
             android:layout_height="1dp"
@@ -92,7 +74,6 @@
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Calendar card -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -100,12 +81,10 @@
             android:background="@drawable/cal_background"
             android:padding="14dp">
 
-            <!-- Month/Year header -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp">
-
                 <TextView
                     android:id="@+id/tv_cal_month"
                     android:layout_width="wrap_content"
@@ -114,9 +93,7 @@
                     android:textColor="#BBBBBB"
                     android:textSize="10sp"
                     android:letterSpacing="0.15"
-                    android:fontFamily="sans-serif"
                     android:layout_alignParentStart="true"/>
-
                 <TextView
                     android:id="@+id/tv_cal_year"
                     android:layout_width="wrap_content"
@@ -124,76 +101,42 @@
                     android:text="2026"
                     android:textColor="#3A3A3A"
                     android:textSize="9sp"
-                    android:fontFamily="sans-serif-light"
                     android:layout_alignParentEnd="true"/>
             </RelativeLayout>
 
-            <!-- Weekday headers -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginBottom="4dp">
-
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="D" android:textColor="#7A2A2A" android:textSize="8sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="L" android:textColor="#3A3A3A" android:textSize="8sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="M" android:textColor="#3A3A3A" android:textSize="8sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="X" android:textColor="#3A3A3A" android:textSize="8sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="J" android:textColor="#3A3A3A" android:textSize="8sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="V" android:textColor="#3A3A3A" android:textSize="8sp"/>
-                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:gravity="center"
-                    android:text="S" android:textColor="#3A3A3A" android:textSize="8sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="D" android:textColor="#7A2A2A" android:textSize="8sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="L" android:textColor="#3A3A3A" android:textSize="8sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="M" android:textColor="#3A3A3A" android:textSize="8sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="X" android:textColor="#3A3A3A" android:textSize="8sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="J" android:textColor="#3A3A3A" android:textSize="8sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="V" android:textColor="#3A3A3A" android:textSize="8sp"/>
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="S" android:textColor="#3A3A3A" android:textSize="8sp"/>
             </LinearLayout>
 
-            <!-- Calendar days grid (populated programmatically) -->
             <LinearLayout
                 android:id="@+id/cal_grid"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"/>
 
-            <!-- Legend -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layout_marginTop="8dp">
-
-                <View
-                    android:layout_width="5dp"
-                    android:layout_height="5dp"
-                    android:background="@drawable/dot_red"
-                    android:layout_marginEnd="5dp"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="FESTIVO COLOMBIA"
-                    android:textColor="#3A3A3A"
-                    android:textSize="7sp"
-                    android:letterSpacing="0.1"
-                    android:fontFamily="sans-serif-light"/>
+                <View android:layout_width="5dp" android:layout_height="5dp" android:background="@drawable/dot_red" android:layout_marginEnd="5dp"/>
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FESTIVO COLOMBIA" android:textColor="#3A3A3A" android:textSize="7sp" android:letterSpacing="0.1"/>
             </LinearLayout>
-
         </LinearLayout>
 
     </LinearLayout>
 
-    <!-- Rotate button - always on top right corner -->
     <ImageButton
         android:id="@+id/btn_rotate"
         android:layout_width="28dp"

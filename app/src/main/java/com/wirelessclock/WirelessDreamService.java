@@ -1,18 +1,12 @@
 package com.wirelessclock;
 
-import android.content.Intent;
-import android.os.BatteryManager;
+import android.graphics.Color;
+import android.os.Handler;
 import android.service.dreams.DreamService;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.graphics.Color;
-import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
-import android.os.Handler;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Locale;
@@ -20,38 +14,31 @@ import java.util.Set;
 
 public class WirelessDreamService extends DreamService {
 
-    private Handler handler = new Handler();
-    private boolean isLandscape = false;
-    private SharedPreferences prefs;
-
-    private static final Set<String> COLOMBIA_HOLIDAYS = new HashSet<>();
-
+    private final Handler handler = new Handler();
+    private static final Set<String> HOLIDAYS = new HashSet<>();
     static {
-        // 2025
-        addHolidays("2025", new String[]{
-            "01-01","01-06","03-24","04-17","04-18","05-01","06-02","06-23","06-30",
-            "07-20","08-07","08-18","10-13","11-03","11-17","12-08","12-25"
-        });
-        // 2026
-        addHolidays("2026", new String[]{
-            "01-01","01-12","03-23","04-02","04-03","05-01","05-18","06-08","06-15",
-            "06-29","07-20","08-07","08-17","10-12","11-02","11-16","12-08","12-25"
-        });
-        // 2027
-        addHolidays("2027", new String[]{
-            "01-01","01-11","03-22","03-25","03-26","05-01","05-10","05-31","06-07",
-            "07-05","07-20","08-07","08-16","10-18","11-01","11-15","12-08","12-25"
-        });
-        // 2028
-        addHolidays("2028", new String[]{
-            "01-01","01-10","04-13","04-14","05-01","05-22","06-12","06-19","07-03",
-            "07-20","08-07","08-21","10-16","11-06","11-13","12-08","12-25"
-        });
+        String[][] data = {
+            {"2025","01-01"},{"2025","01-06"},{"2025","03-24"},{"2025","04-17"},
+            {"2025","04-18"},{"2025","05-01"},{"2025","06-02"},{"2025","06-23"},
+            {"2025","06-30"},{"2025","07-20"},{"2025","08-07"},{"2025","08-18"},
+            {"2025","10-13"},{"2025","11-03"},{"2025","11-17"},{"2025","12-08"},{"2025","12-25"},
+            {"2026","01-01"},{"2026","01-12"},{"2026","03-23"},{"2026","04-02"},
+            {"2026","04-03"},{"2026","05-01"},{"2026","05-18"},{"2026","06-08"},
+            {"2026","06-15"},{"2026","06-29"},{"2026","07-20"},{"2026","08-07"},
+            {"2026","08-17"},{"2026","10-12"},{"2026","11-02"},{"2026","11-16"},
+            {"2026","12-08"},{"2026","12-25"},
+            {"2027","01-01"},{"2027","01-11"},{"2027","03-22"},{"2027","03-25"},
+            {"2027","03-26"},{"2027","05-01"},{"2027","05-10"},{"2027","05-31"},
+            {"2027","06-07"},{"2027","07-05"},{"2027","07-20"},{"2027","08-07"},
+            {"2027","08-16"},{"2027","10-18"},{"2027","11-01"},{"2027","11-15"},
+            {"2027","12-08"},{"2027","12-25"}
+        };
+        for (String[] d : data) HOLIDAYS.add(d[0] + "-" + d[1]);
     }
 
-    private static void addHolidays(String year, String[] dates) {
-        for (String d : dates) COLOMBIA_HOLIDAYS.add(year + "-" + d);
-    }
+    private static final String[] DAYS = {"Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"};
+    private static final String[] MONTHS = {"Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"};
+    private static final String[] MONTHS_UP = {"ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"};
 
     @Override
     public void onAttachedToWindow() {
@@ -59,173 +46,83 @@ public class WirelessDreamService extends DreamService {
         setInteractive(true);
         setFullscreen(true);
         setScreenBright(true);
-
-        prefs = getSharedPreferences("WirelessClockPrefs", MODE_PRIVATE);
-        isLandscape = prefs.getBoolean("orientation", false);
-
-        View contentView = LayoutInflater.from(this).inflate(R.layout.activity_main, null);
-        setContentView(contentView);
-
-        ImageButton btn = contentView.findViewById(R.id.btn_rotate);
-        if (btn != null) {
-            btn.setOnClickListener(v -> {
-                isLandscape = !isLandscape;
-                prefs.edit().putBoolean("orientation", isLandscape).apply();
-                // restart dream to apply orientation
-                finish();
-            });
-        }
-
-        handler.post(clockRunnable);
+        View v = LayoutInflater.from(this).inflate(R.layout.activity_main, null);
+        setContentView(v);
+        View badge = v.findViewById(R.id.charging_badge);
+        if (badge != null) badge.setVisibility(View.VISIBLE);
+        View btnRotate = v.findViewById(R.id.btn_rotate);
+        if (btnRotate != null) btnRotate.setVisibility(View.GONE);
+        handler.post(tick);
     }
 
-    private Runnable clockRunnable = new Runnable() {
-        @Override
-        public void run() {
-            updateDateTime();
+    private final Runnable tick = new Runnable() {
+        @Override public void run() {
+            updateClock();
             updateCalendar();
             handler.postDelayed(this, 1000);
         }
     };
 
-    private void updateDateTime() {
-        Calendar cal = Calendar.getInstance();
-        int hour = cal.get(Calendar.HOUR);
-        if (hour == 0) hour = 12;
-        int minute = cal.get(Calendar.MINUTE);
-        boolean isAM = cal.get(Calendar.AM_PM) == Calendar.AM;
-
-        String timeStr = String.format(Locale.getDefault(), "%02d:%02d", hour, minute);
-        String[] dayNames = {"Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"};
-        String[] monthNames = {"Enero","Febrero","Marzo","Abril","Mayo","Junio",
-                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"};
-
-        String dayName = dayNames[cal.get(Calendar.DAY_OF_WEEK) - 1];
-        String monthName = monthNames[cal.get(Calendar.MONTH)];
-        int dayNum = cal.get(Calendar.DAY_OF_MONTH);
-        String dateStr = (dayName + ", " + dayNum + " " + monthName).toUpperCase();
-
-        setText(R.id.tv_time, timeStr);
-        setText(R.id.tv_ampm, isAM ? "AM" : "PM");
-        setText(R.id.tv_date, dateStr);
-
-        View badge = getWindow().getDecorView().findViewWithTag("charging_badge");
-        View chBadge = ((View) getWindow().getDecorView()).findViewWithTag("charging_badge");
-
-        View rootView = getWindow().getDecorView().findViewWithTag(null);
-        View chargingBadge = ((View)getWindow().getDecorView()).findViewWithTag("charging");
-        if (chargingBadge != null) chargingBadge.setVisibility(View.VISIBLE);
-
-        View cbadge = getWindow().getDecorView().findViewById(R.id.charging_badge);
-        if (cbadge != null) cbadge.setVisibility(View.VISIBLE);
-        View ctv = getWindow().getDecorView().findViewById(R.id.tv_charging);
-        if (ctv != null) ctv.setVisibility(View.VISIBLE);
+    private void updateClock() {
+        View root = getWindow().getDecorView();
+        Calendar c = Calendar.getInstance();
+        int h = c.get(Calendar.HOUR); if (h == 0) h = 12;
+        int m = c.get(Calendar.MINUTE);
+        boolean am = c.get(Calendar.AM_PM) == Calendar.AM;
+        setText(root, R.id.tv_time, String.format(Locale.getDefault(), "%02d:%02d", h, m));
+        setText(root, R.id.tv_ampm, am ? "AM" : "PM");
+        setText(root, R.id.tv_date, DAYS[c.get(Calendar.DAY_OF_WEEK)-1].toUpperCase() + ", " + c.get(Calendar.DAY_OF_MONTH) + " " + MONTHS[c.get(Calendar.MONTH)].toUpperCase());
     }
 
     private void updateCalendar() {
-        Calendar cal = Calendar.getInstance();
-        int year = cal.get(Calendar.YEAR);
-        int month = cal.get(Calendar.MONTH);
-        int today = cal.get(Calendar.DAY_OF_MONTH);
-
-        String[] monthNames = {"ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO",
-                "JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"};
-
-        setText(R.id.tv_cal_month, monthNames[month]);
-        setText(R.id.tv_cal_year, String.valueOf(year));
-
         View root = getWindow().getDecorView();
-        LinearLayout calGrid = root.findViewById(R.id.cal_grid);
-        if (calGrid == null) return;
-        calGrid.removeAllViews();
-
-        Calendar firstDay = Calendar.getInstance();
-        firstDay.set(year, month, 1);
-        int startDow = firstDay.get(Calendar.DAY_OF_WEEK) - 1;
-
-        Calendar lastDay = Calendar.getInstance();
-        lastDay.set(year, month + 1, 0);
-        int daysInMonth = lastDay.get(Calendar.DAY_OF_MONTH);
-
-        String yearStr = String.format(Locale.getDefault(), "%04d", year);
-        String monthStr = String.format(Locale.getDefault(), "%02d", month + 1);
-
+        Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR), month = c.get(Calendar.MONTH), today = c.get(Calendar.DAY_OF_MONTH);
+        setText(root, R.id.tv_cal_month, MONTHS_UP[month]);
+        setText(root, R.id.tv_cal_year, String.valueOf(year));
+        LinearLayout grid = root.findViewById(R.id.cal_grid);
+        if (grid == null) return;
+        grid.removeAllViews();
+        int firstDow = new java.util.GregorianCalendar(year, month, 1).get(Calendar.DAY_OF_WEEK) - 1;
+        int days = new java.util.GregorianCalendar(year, month + 1, 0).get(Calendar.DAY_OF_MONTH);
+        String y = String.format(Locale.US, "%04d", year);
+        String mo = String.format(Locale.US, "%02d", month + 1);
+        int cellSz = (int)(28 * getResources().getDisplayMetrics().density);
         LinearLayout row = null;
-        int cellIndex = 0;
-
-        for (int i = 0; i < startDow + daysInMonth; i++) {
-            if (cellIndex % 7 == 0) {
+        for (int i = 0; i < firstDow + days; i++) {
+            if (i % 7 == 0) {
                 row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
-                LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT);
-                row.setLayoutParams(rowParams);
-                calGrid.addView(row);
+                row.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+                grid.addView(row);
             }
-
             TextView cell = new TextView(this);
-            int cellSizePx = dpToPx(26);
-            LinearLayout.LayoutParams cellParams = new LinearLayout.LayoutParams(0, cellSizePx, 1f);
-            cell.setLayoutParams(cellParams);
-            cell.setTextSize(9.5f);
+            cell.setLayoutParams(new LinearLayout.LayoutParams(0, cellSz, 1f));
             cell.setGravity(android.view.Gravity.CENTER);
-
-            if (i >= startDow) {
-                int dayNum = i - startDow + 1;
-                cell.setText(String.valueOf(dayNum));
-                String dayStr = String.format(Locale.getDefault(), "%02d", dayNum);
-                String dateKey = yearStr + "-" + monthStr + "-" + dayStr;
-                Calendar dayCal = Calendar.getInstance();
-                dayCal.set(year, month, dayNum);
-                int dow = dayCal.get(Calendar.DAY_OF_WEEK);
-                boolean isHoliday = COLOMBIA_HOLIDAYS.contains(dateKey);
-                boolean isSunday = (dow == Calendar.SUNDAY);
-                boolean isToday = (dayNum == today);
-
-                if (isToday && isHoliday) {
-                    cell.setBackgroundResource(R.drawable.circle_red);
-                    cell.setTextColor(Color.WHITE);
-                } else if (isToday) {
-                    cell.setBackgroundResource(R.drawable.circle_white);
-                    cell.setTextColor(Color.parseColor("#050505"));
-                } else if (isHoliday) {
-                    cell.setTextColor(Color.parseColor("#e74c3c"));
-                } else if (isSunday) {
-                    cell.setTextColor(Color.parseColor("#7a2a2a"));
-                } else {
-                    cell.setTextColor(Color.parseColor("#555555"));
-                }
+            cell.setTextSize(9.5f);
+            if (i >= firstDow) {
+                int d = i - firstDow + 1;
+                cell.setText(String.valueOf(d));
+                String key = y + "-" + mo + "-" + String.format(Locale.US, "%02d", d);
+                int dow = new java.util.GregorianCalendar(year, month, d).get(Calendar.DAY_OF_WEEK);
+                boolean holiday = HOLIDAYS.contains(key);
+                boolean sunday = dow == Calendar.SUNDAY;
+                boolean isToday = d == today;
+                if (isToday && holiday) { cell.setBackgroundResource(R.drawable.circle_red); cell.setTextColor(Color.WHITE); }
+                else if (isToday) { cell.setBackgroundResource(R.drawable.circle_white); cell.setTextColor(Color.parseColor("#050505")); }
+                else if (holiday) { cell.setTextColor(Color.parseColor("#e74c3c")); }
+                else if (sunday) { cell.setTextColor(Color.parseColor("#7a2a2a")); }
+                else { cell.setTextColor(Color.parseColor("#555555")); }
             }
-
             if (row != null) row.addView(cell);
-            cellIndex++;
-        }
-
-        if (cellIndex % 7 != 0 && row != null) {
-            while (cellIndex % 7 != 0) {
-                TextView cell = new TextView(this);
-                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(0, dpToPx(26), 1f);
-                cell.setLayoutParams(p);
-                row.addView(cell);
-                cellIndex++;
-            }
         }
     }
 
-    private void setText(int id, String text) {
-        View root = getWindow().getDecorView();
-        TextView tv = root.findViewById(id);
-        if (tv != null) tv.setText(text);
-    }
-
-    private int dpToPx(int dp) {
-        return (int) (dp * getResources().getDisplayMetrics().density);
-    }
+    private void setText(View root, int id, String t) { TextView v = root.findViewById(id); if (v != null) v.setText(t); }
 
     @Override
     public void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        handler.removeCallbacks(clockRunnable);
+        handler.removeCallbacks(tick);
     }
 }
